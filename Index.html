@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGReborn - OpenAG Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            background-color: #000;
+        }
+
+        /* --- ПЛАВНО СМЕНЯЮЩИЙСЯ ЗАДНИЙ ФОН (БЕЗ ДЁРГАНИЙ) --- */
+        .bg-slideshow-container {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -2;
+        }
+
+        .bg-slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            animation: slideAnimation 24s infinite ease-in-out;
+        }
+
+        /* Наслаиваем анимации со сдвигом по времени для идеального фейда */
+        .bg-slide:nth-child(1) { background-image: url('Images/hq720.jpg'); animation-delay: 0s; }
+        .bg-slide:nth-child(2) { background-image: url('Images/783769605_preview_hudtimer1.jpg'); animation-delay: 6s; }
+        .bg-slide:nth-child(3) { background-image: url('Images/783769605_preview_20161019144613_1.jpg'); animation-delay: 12s; }
+        .bg-slide:nth-child(4) { background-image: url('Images/783769605_preview_20161019143624_1.jpg'); animation-delay: 18s; }
+
+        @keyframes slideAnimation {
+            0%, 4% { opacity: 0; }
+            12%, 25% { opacity: 1; }
+            33%, 100% { opacity: 0; }
+        }
+
+        /* Тёмный заблюренный оверлей */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(12px);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 50px;
+        }
+
+        /* Шапка */
+        header {
+            text-align: center;
+            width: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.9);
+        }
+
+        /* --- БУРГЕР МЕНЮ ВЫБОРА ЯЗЫКА --- */
+        .burger-menu {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .burger-line {
+            width: 100%;
+            height: 4px;
+            background-color: #00ff00;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        /* Анимация превращения бургера в крестик */
+        .burger-menu.open .burger-line:nth-child(1) { transform: translateY(13px) rotate(45deg); }
+        .burger-menu.open .burger-line:nth-child(2) { opacity: 0; }
+        .burger-menu.open .burger-line:nth-child(3) { transform: translateY(-13px) rotate(-45deg); }
+
+        /* Полноэкранное меню языков */
+        .lang-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(25px); /* Мощное замыливание фона */
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .lang-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .lang-overlay h2 {
+            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            color: #00ff00;
+        }
+
+        .lang-link {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: none;
+            border: none;
+        }
+
+        .lang-link:hover, .lang-link.active {
+            color: #00ff00;
+            transform: scale(1.1);
+            text-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+        }
+
+        main {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        /* --- ОДИНАКОВЫЕ ПОЛУПРОЗРАЧНЫЕ КАРТОЧКИ --- */
+        .feature-card {
+            background: rgba(20, 20, 20, 0.65); /* Полупрозрачный темный фон */
+            backdrop-filter: blur(4px);
+            color: #fff;
+            padding: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 50px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px; /* Немного скруглил для аккуратности */
+            min-height: 310px; /* Фиксируем минимальную высоту для одинаковости */
+            width: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,255,0,0.1);
+            border-color: rgba(0, 255, 0, 0.3);
+        }
+
+        /* Карточка описания сверху — теперь один в один как остальные */
+        .about-card {
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            text-align: left;
+        }
+        
+        .about-card h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #00ff00;
+        }
+
+        .about-card p, .card-text {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: #e0e0e0;
+        }
+
+        .card-text {
+            flex: 1;
+        }
+
+        /* Зона картинок */
+        .card-image {
+            flex: 0 0 380px;
+            height: 220px;
+            background-color: #ff0000; /* Резервный красный */
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .card-image:hover {
+            transform: scale(1.03);
+            filter: brightness(1.2);
+        }
+
+        .card-image::after {
+            content: '🔍';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 2rem;
+            transition: transform 0.2s ease;
+        }
+        .card-image:hover::after {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .feature-card:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        /* --- ПОЛНОЭКРАННАЯ МОДАЛКА --- */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            width: 80vw;
+            height: 45vw;
+            max-width: 85%;
+            max-height: 85%;
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
+            border: 3px solid #00ff00; /* Перекрасил в хакерский зеленый модалку */
+            transform: scale(0.7);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: #ff0000; /* Резервный цвет */
+            background-size: cover;
+            background-position: center;
+            border-radius: 4px;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px; right: 30px;
+            font-size: 4rem;
+            color: #fff;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .modal-close:hover { color: #00ff00; }
+
+        /* Подвал */
+        footer {
+            margin-top: 20px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 18px 50px;
+            font-size: 1.2rem;
+            color: #00ff00;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-weight: bold;
+            border: 2px solid #1a3a1a;
+            background: rgba(16, 32, 16, 0.7);
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .download-btn:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.5);
+            border-color: #00ff00;
+        }
+
+        /* Адаптив */
+        @media (max-width: 900px) {
+            header h1 { font-size: 3rem; }
+            .feature-card, .feature-card:nth-child(even) {
+                flex-direction: column-reverse;
+                text-align: center;
+                padding: 30px;
+                min-height: auto;
+            }
+            .card-image {
+                width: 100%;
+                flex: none;
+                height: 200px;
+            }
+            .modal-content {
+                width: 95vw;
+                height: 56vw;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Улучшенный контейнер фонового слайдшоу со слоями -->
+    <div class="bg-slideshow-container">
+        <div class="bg-slide"></div>
+        <div class="bg-slide"></div>
+        <div class="bg-slide"></div>
+        <div class="bg-slide"></div>
+    </div>
+
+    <!-- Полноэкранное меню выбора языков -->
+    <div class="lang-overlay" id="langOverlay">
+        <h2>Select Language</h2>
+        <button class="lang-link active" onclick="switchLang('ru')">Русский</button>
+        <button class="lang-link" onclick="switchLang('uk')">Українська</button>
+        <button class="lang-link" onclick="switchLang('be')">Беларуская</button>
+        <button class="lang-link" onclick="switchLang('kk')">Қазақ Тілі</button>
+        <button class="lang-link" onclick="switchLang('en')">English</button>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1 id="main-title">AGReborn</h1>
+            <!-- Бургер -->
+            <div class="burger-menu" id="burgerMenu" onclick="toggleLangMenu()">
+                <div class="burger-line"></div>
+                <div class="burger-line"></div>
+                <div class="burger-line"></div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Описание проекта (теперь в едином стиле) -->
+            <section class="feature-card about-card">
+                <h2 id="about-title">О проекте OpenAG</h2>
+                <p id="about-text">AGReborn — это передовой клиент с открытым исходным кодом для легендарного мультиплеерного мода Adrenaline Gamer. Мы переосмыслили старый движок, исправили критические уязвимости, добавили поддержку современных систем и улучшили сетевой код, чтобы вернуть соревновательный дух старой школы в максимальном комфорте.</p>
+            </section>
+
+            <!-- Карточка 1 -->
+            <section class="feature-card">
+                <!-- Пример добавления картинки: style="background-image: url('Images/your_img.jpg')" -->
+                <div class="card-image" style="background-image: url('Images/hq720.jpg')" onclick="openModal(this)"></div>
+                <div class="card-text" id="feat-1">
+                    Смертельный матч на максимальных скоростях. Оптимизированный движок обеспечивает стабильный FPS и мгновенный отклик мыши в любых замесах.
+                </div>
+            </section>
+
+            <!-- Карточка 2 -->
+            <section class="feature-card">
+                <div class="card-image" style="background-image: url('Images/783769605_preview_hudtimer1.jpg')" onclick="openModal(this)"></div>
+                <div class="card-text" id="feat-2">
+                    Полностью кастомизируемый интерфейс, продвинутый хитсаунд пак и встроенные инструменты для детальной настройки прицела и графики под киберспорт.
+                </div>
+            </section>
+
+            <!-- Карточка 3 -->
+            <section class="feature-card">
+                <div class="card-image" style="background-image: url('Images/783769605_preview_20161019144613_1.jpg')" onclick="openModal(this)"></div>
+                <div class="card-text" id="feat-3">
+                    Улучшенный сетевой код с компенсацией задержек (lag compensation), устраняющий старые баги с регистрацией попаданий на серверах.
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <a href="https://github.com/alekstwin63/OpenAG/releases" class="download-btn" id="btn-text" target="_blank">Get Latest Version</a>
+        </footer>
+    </div>
+
+    <!-- Модалка просмотра -->
+    <div class="modal" id="photoModal">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <div class="modal-content" id="modalImg"></div>
+    </div>
+
+    <script>
+        const translations = {
+            ru: {
+                aboutTitle: "О проекте OpenAG",
+                aboutText: "AGReborn — это передовой клиент с открытым исходным кодом для легендарного мультиплеерного мода Adrenaline Gamer. Мы переосмыслили старый движок, исправили критические уязвимости, добавили поддержку современных систем и улучшили сетевой код, чтобы вернуть соревновательный дух старой школы в максимальном комфорте.",
+                feat1: "Смертельный матч на максимальных скоростях. Оптимизированный движок обеспечивает стабильный FPS и мгновенный отклик мыши в любых замесах.",
+                feat2: "Полностью кастомизируемый интерфейс, продвинутый хитсаунд пак и встроенные инструменты для детальной настройки прицела и графики под киберспорт.",
+                feat3: "Улучшенный сетевой код с компенсацией задержек (lag compensation), устраняющий старые баги с регистрацией попаданий на серверах.",
+                btn: "Скачать последнюю версию"
+            },
+            uk: {
+                aboutTitle: "Про проєкт OpenAG",
+                aboutText: "AGReborn — це передовий клієнт із відкритим вихідним кодом для легендарного мультиплеєрного моду Adrenaline Gamer. Ми переосмыслили старий двигун, виправили критичні вразливості, додали підтримку сучасних систем та покращили мережевий код.",
+                feat1: "Смертельний матч на максимальних швидкостях. Оптимізований двигун забезпечує стабільний FPS та миттєвий відгук миші у будь-яких замісах.",
+                feat2: "Повністю кастомізований інтерфейс, просунутий хітсаунд пак та вбудовані інструменти для детального налаштування прицілу.",
+                feat3: "Покращений мережевий код з компенсацією затримок, що усуває старі баги з реєстрацією влучань на серверах.",
+                btn: "Завантажити останню версію"
+            },
+            be: {
+                aboutTitle: "Пра праект OpenAG",
+                aboutText: "AGReborn — гэта перадавы кліент з адкрытым зыходным кодам для легендарнага мультыплэернага мода Adrenaline Gamer. Мы пераасэнсавалі стары рухавік, выправілі крытычныя ўразлівасці і дадалі падтрымку сучасных сістэм.",
+                feat1: "Смяротны матч на максімальных хуткасцях. Аптымізаваны рухавік забяспечвае стабільны FPS і імгненны водгук мышы.",
+                feat2: "Цалкам кастамізуемы інтэрфейс, прасунуты хітсаўнд пак і ўбудаваныя інструменты для дэталёвай налады прыцэла.",
+                feat3: "Палепшаны сеткавы код з кампенсацыяй затрымак, які ліквідуе старыя багі з рэгістрацыяй трапленняў.",
+                btn: "Спампаваць апошнюю версію"
+            },
+            kk: {
+                aboutTitle: "OpenAG жобасы туралы",
+                aboutText: "AGReborn — аты аңызға айналған Adrenaline Gamer мультиплеерлік модына арналған заманауи ашық бастапқы коды бар клиент. Біз ескі қозғалтқышты қайта өңдеп, маңызды осалдықтарды түзеттік.",
+                feat1: "Максималды жылдамдықтағы өлім матчы. Оңтайландырылған қозғалтқыш кез келген шайқаста тұрақты FPS пен тінтуірдің лезде жауап беруін қамтамасыз етеді.",
+                feat2: "Толық теңшелетін интерфейс, жетілдірілген хитсаунд пак және киберспортқа арналған көздеуіш пен графиканы егжей-тегжейлі баптау құралдары.",
+                feat3: "Серверлердегі хиттарды тіркеудегі ескі қателерді жоятын кідіріс өтемақысы бар жақсартылған желілік код.",
+                btn: "Соңғы нұсқасын жүктеу"
+            },
+            en: {
+                aboutTitle: "About OpenAG Project",
+                aboutText: "AGReborn is an advanced open-source client for the legendary Adrenaline Gamer multiplayer mod. We have reimagined the old engine, fixed critical vulnerabilities, added support for modern systems, and improved network code.",
+                feat1: "Deathmatch at maximum speeds. The optimized engine provides stable FPS and instant mouse response in any battles.",
+                feat2: "Fully customizable UI, advanced hitsound pack, and built-in tools for detailed crosshair and graphics tuning for esports.",
+                feat3: "Improved network code with lag compensation, eliminating old hit registration bugs on servers.",
+                btn: "Get Latest Version"
+            }
+        };
+
+        // Логика бургер-меню
+        const burgerMenu = document.getElementById('burgerMenu');
+        const langOverlay = document.getElementById('langOverlay');
+
+        function toggleLangMenu() {
+            burgerMenu.classList.toggle('open');
+            langOverlay.classList.toggle('open');
+        }
+
+        function switchLang(lang) {
+            document.querySelectorAll('.lang-link').forEach(btn => btn.classList.remove('active'));
+            // Находим кнопку через перебор, так как событие event может потеряться
+            Array.from(document.querySelectorAll('.lang-link')).find(el => el.getAttribute('onclick').includes(lang)).classList.add('active');
+
+            document.getElementById('about-title').innerText = translations[lang].aboutTitle;
+            document.getElementById('about-text').innerText = translations[lang].aboutText;
+            document.getElementById('feat-1').innerText = translations[lang].feat1;
+            document.getElementById('feat-2').innerText = translations[lang].feat2;
+            document.getElementById('feat-3').innerText = translations[lang].feat3;
+            document.getElementById('btn-text').innerText = translations[lang].btn;
+
+            // Закрываем меню после выбора
+            toggleLangMenu();
+        }
+
+        // Логика модалки
+        const modal = document.getElementById('photoModal');
+        const modalImg = document.getElementById('modalImg');
+
+        function openModal(element) {
+            modal.classList.add('active');
+            const bg = window.getComputedStyle(element).backgroundImage;
+            if(bg && bg !== 'none') {
+                modalImg.style.backgroundImage = bg;
+                modalImg.style.backgroundColor = 'transparent'; 
+            } else {
+                modalImg.style.backgroundImage = 'none';
+                modalImg.style.backgroundColor = '#ff0000'; // Если пустая — горит красным
+            }
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
+        });
+    </script>
+</body>
+</html>
