@@ -1,510 +1,666 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AGReborn - OpenAG Client</title>
+    <title>AGReborn Client</title>
     <style>
+        :root {
+            --bg: #050505;
+            --surface: rgba(18, 18, 18, 0.78);
+            --border: #222222;
+            --text: #e0e0e0;
+            --text-muted: #666666;
+            --accent: #ffffff;
+            --success: #00ff66;
+        }
+
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #fff;
-            min-height: 100vh;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            line-height: 1.6;
             overflow-x: hidden;
             position: relative;
-            background-color: #000;
+            min-height: 100vh;
         }
 
-        /* --- ПЛАВНО СМЕНЯЮЩИЙСЯ ЗАДНИЙ ФОН (БЕЗ ДЁРГАНИЙ) --- */
-        .bg-slideshow-container {
+        /* Фоновое слайдшоу со скриншотами */
+        .bg-slideshow {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: -2;
+            list-style: none;
         }
 
-        .bg-slide {
+        .bg-slideshow li {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
             opacity: 0;
-            animation: slideAnimation 24s infinite ease-in-out;
+            z-index: 0;
+            animation: imageFade 24s linear infinite;
+            filter: brightness(0.15) blur(3px);
         }
 
-        /* Наслаиваем анимации со сдвигом по времени для идеального фейда */
-        .bg-slide:nth-child(1) { background-image: url('images/image.png'); animation-delay: 0s; }
-        .bg-slide:nth-child(2) { background-image: url('images/image2.png'); animation-delay: 6s; }
+        .bg-slideshow li:nth-child(1) { background-image: url('images/image.png'); animation-delay: 0s; }
+        .bg-slideshow li:nth-child(2) { background-image: url('images/image2.png'); animation-delay: 6s; }
+        .bg-slideshow li:nth-child(3) { background-image: url('images/image.png'); animation-delay: 12s; }
+        .bg-slideshow li:nth-child(4) { background-image: url('images/image2.png'); animation-delay: 18s; }
 
-        @keyframes slideAnimation {
-            0%, 4% { opacity: 0; }
-            12%, 25% { opacity: 1; }
-            33%, 100% { opacity: 0; }
+        @keyframes imageFade {
+            0% { opacity: 0; animation-timing-function: ease-in; }
+            8% { opacity: 1; }
+            25% { opacity: 1; }
+            33% { opacity: 0; animation-timing-function: ease-out; }
+            100% { opacity: 0; }
         }
 
-        /* Тёмный заблюренный оверлей */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(12px);
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
+        .wrapper {
             display: flex;
             flex-direction: column;
+            min-height: 100vh;
+            padding: 2rem 1rem;
             align-items: center;
-            gap: 50px;
         }
 
-        /* Шапка */
         header {
-            text-align: center;
             width: 100%;
-            position: relative;
+            max-width: 700px;
             display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        header h1 {
-            font-size: 4.5rem;
-            font-weight: 900;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.9);
-        }
-
-        /* --- БУРГЕР МЕНЮ ВЫБОРА ЯЗЫКА --- */
-        .burger-menu {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 40px;
-            height: 30px;
-            display: flex;
-            flex-direction: column;
             justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.4rem;
+            letter-spacing: -1px;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.4rem;
+            background-color: var(--accent);
+            margin-left: 2px;
+            animation: blink 0.8s steps(2, start) infinite;
+        }
+
+        @keyframes blink {
+            to { visibility: hidden; }
+        }
+
+        /* Бургер меню */
+        .burger-menu {
             cursor: pointer;
-            z-index: 1001;
+            z-index: 100;
+            padding: 5px;
         }
 
-        .burger-line {
-            width: 100%;
-            height: 4px;
-            background-color: #00ff00;
-            border-radius: 2px;
-            transition: all 0.3s ease;
+        .burger-menu div {
+            width: 25px;
+            height: 2px;
+            background-color: var(--text);
+            margin: 5px 0;
+            transition: 0.3s;
         }
 
-        /* Анимация превращения бургера в крестик */
-        .burger-menu.open .burger-line:nth-child(1) { transform: translateY(13px) rotate(45deg); }
-        .burger-menu.open .burger-line:nth-child(2) { opacity: 0; }
-        .burger-menu.open .burger-line:nth-child(3) { transform: translateY(-13px) rotate(-45deg); }
+        .burger-menu.toggle .line1 { transform: rotate(-45deg) translate(-5px, 5px); }
+        .burger-menu.toggle .line2 { opacity: 0; }
+        .burger-menu.toggle .line3 { transform: rotate(45deg) translate(-5px, -5px); }
 
-        /* Полноэкранное меню языков */
-        .lang-overlay {
+        /* Полноэкранный выбор локалей */
+        .fullscreen-menu {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(25px); /* Мощное замыливание фона */
-            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 5, 0.98);
+            z-index: 90;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 25px;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            transition: opacity 0.25s ease;
         }
 
-        .lang-overlay.open {
+        .fullscreen-menu.open {
             opacity: 1;
             pointer-events: auto;
         }
 
-        .lang-overlay h2 {
-            font-size: 2rem;
+        .menu-title {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 10px;
-            color: #00ff00;
         }
 
-        .lang-link {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #fff;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .lang-list {
+            list-style: none;
+            text-align: center;
+        }
+
+        .lang-list li {
+            margin: 1.2rem 0;
+        }
+
+        .lang-list button {
             background: none;
             border: none;
-        }
-
-        .lang-link:hover, .lang-link.active {
-            color: #00ff00;
-            transform: scale(1.1);
-            text-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
-        }
-
-        main {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 40px;
-        }
-
-        /* --- ОДИНАКОВЫЕ ПОЛУПРОЗРАЧНЫЕ КАРТОЧКИ --- */
-        .feature-card {
-            background: rgba(20, 20, 20, 0.65); /* Полупрозрачный темный фон */
-            backdrop-filter: blur(4px);
-            color: #fff;
-            padding: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 50px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 8px; /* Немного скруглил для аккуратности */
-            min-height: 310px; /* Фиксируем минимальную высоту для одинаковости */
-            width: 100%;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,255,0,0.1);
-            border-color: rgba(0, 255, 0, 0.3);
-        }
-
-        /* Карточка описания сверху — теперь один в один как остальные */
-        .about-card {
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: center;
-            text-align: left;
-        }
-        
-        .about-card h2 {
-            font-size: 2rem;
-            margin-bottom: 15px;
-            color: #00ff00;
-        }
-
-        .about-card p, .card-text {
-            font-size: 1.15rem;
-            line-height: 1.7;
-            color: #e0e0e0;
-        }
-
-        .card-text {
-            flex: 1;
-        }
-
-        /* Зона картинок */
-        .card-image {
-            flex: 0 0 380px;
-            height: 220px;
-            background-color: #ff0000; /* Резервный красный */
-            background-size: cover;
-            background-position: center;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 1.4rem;
             cursor: pointer;
+            transition: color 0.15s;
             position: relative;
-            overflow: hidden;
-            border-radius: 4px;
-            transition: transform 0.2s ease, filter 0.2s ease;
         }
 
-        .card-image:hover {
-            transform: scale(1.03);
-            filter: brightness(1.2);
+        .lang-list button:hover {
+            color: var(--success);
         }
 
-        .card-image::after {
-            content: '🔍';
+        .lang-list button.active::before {
+            content: '>';
+            color: var(--success);
             position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            font-size: 2rem;
-            transition: transform 0.2s ease;
-        }
-        .card-image:hover::after {
-            transform: translate(-50%, -50%) scale(1);
+            left: -25px;
         }
 
-        .feature-card:nth-child(even) {
-            flex-direction: row-reverse;
+        /* Полупрозрачная центральная плашка */
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 2.5rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
         }
 
-        /* --- ПОЛНОЭКРАННАЯ МОДАЛКА --- */
-        .modal {
+        .hero {
+            margin-bottom: 2.5rem;
+        }
+
+        .hero h1 {
+            font-size: 1.7rem;
+            margin-bottom: 1rem;
+            font-weight: normal;
+        }
+
+        .hero p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Интеллектуальный блок загрузки */
+        .download-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            padding: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.15s, background-color 0.15s;
+            margin-bottom: 2.5rem;
+        }
+
+        .download-box:hover {
+            border-color: var(--text-muted);
+            background-color: rgba(25, 25, 25, 0.4);
+        }
+
+        .download-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dl-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .dl-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .dl-icon {
+            font-size: 1.1rem;
+            color: var(--success);
+        }
+
+        /* Секция фич и аккордеон */
+        .features {
+            margin-bottom: 1rem;
+        }
+
+        .feature-item {
+            border-bottom: 1px solid var(--border);
+            padding: 1.2rem 0;
+        }
+
+        .feature-title {
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .arrow-icon {
+            width: 12px;
+            height: 12px;
+            position: relative;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .arrow-icon::before, .arrow-icon::after {
+            content: '';
+            position: absolute;
+            background-color: var(--text-muted);
+            transition: background-color 0.25s, transform 0.35s;
+        }
+
+        .arrow-icon::before {
+            top: 5px;
+            left: 0;
+            width: 12px;
+            height: 2px;
+        }
+
+        .arrow-icon::after {
+            top: 0;
+            left: 5px;
+            width: 2px;
+            height: 12px;
+        }
+
+        .feature-item.open .arrow-icon {
+            transform: rotate(180deg);
+        }
+
+        .feature-item.open .arrow-icon::after {
+            transform: rotate(90deg);
+            opacity: 0;
+        }
+
+        .feature-item:hover .arrow-icon::before, .feature-item:hover .arrow-icon::after {
+            background-color: var(--success);
+        }
+
+        .feature-desc {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1), margin-top 0.3s;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-align: justify;
+        }
+
+        .feature-item.open .feature-desc {
+            max-height: 2000px;
+            margin-top: 1rem;
+        }
+
+        .screenshot-container {
+            margin-top: 1.2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .game-thumb {
+            width: 100%;
+            height: auto;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: filter 0.2s, transform 0.2s;
+        }
+
+        .game-thumb:hover {
+            filter: brightness(1.2);
+            transform: scale(1.015);
+        }
+
+        /* Просмотрщик скриншотов (Лайтбокс) */
+        .lightbox {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 3, 3, 0.96);
+            z-index: 200;
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            transition: opacity 0.25s ease;
         }
 
-        .modal.active {
+        .lightbox.open {
             opacity: 1;
             pointer-events: auto;
         }
 
-        .modal-content {
-            width: 80vw;
-            height: 45vw;
-            max-width: 85%;
-            max-height: 85%;
-            box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
-            border: 3px solid #00ff00; /* Перекрасил в хакерский зеленый модалку */
-            transform: scale(0.7);
-            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-            background-color: #ff0000; /* Резервный цвет */
-            background-size: cover;
-            background-position: center;
-            border-radius: 4px;
+        .lightbox img {
+            max-width: 92%;
+            max-height: 92%;
+            border: 1px solid #252525;
         }
-
-        .modal.active .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 20px; right: 30px;
-            font-size: 4rem;
-            color: #fff;
-            cursor: pointer;
-            user-select: none;
-            transition: color 0.2s;
-        }
-        .modal-close:hover { color: #00ff00; }
 
         /* Подвал */
         footer {
-            margin-top: 20px;
+            width: 100%;
+            max-width: 700px;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: lowercase;
+            letter-spacing: 1px;
         }
 
-        .download-btn {
-            display: inline-block;
-            padding: 18px 50px;
-            font-size: 1.2rem;
-            color: #00ff00;
+        .collab-link {
+            color: var(--text);
             text-decoration: none;
-            text-transform: uppercase;
             font-weight: bold;
-            border: 2px solid #1a3a1a;
-            background: rgba(16, 32, 16, 0.7);
-            border-radius: 8px;
-            transition: all 0.2s ease-in-out;
+            transition: color 0.2s, text-shadow 0.2s;
         }
 
-        .download-btn:hover {
-            background: #00ff00;
-            color: #000;
-            box-shadow: 0 0 25px rgba(0, 255, 0, 0.5);
-            border-color: #00ff00;
-        }
-
-        /* Адаптив */
-        @media (max-width: 900px) {
-            header h1 { font-size: 3rem; }
-            .feature-card, .feature-card:nth-child(even) {
-                flex-direction: column-reverse;
-                text-align: center;
-                padding: 30px;
-                min-height: auto;
-            }
-            .card-image {
-                width: 100%;
-                flex: none;
-                height: 200px;
-            }
-            .modal-content {
-                width: 95vw;
-                height: 56vw;
-            }
+        .collab-link:hover {
+            color: var(--accent);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
         }
     </style>
 </head>
 <body>
 
-    <!-- Улучшенный контейнер фонового слайдшоу со слоями -->
-    <div class="bg-slideshow-container">
-        <div class="bg-slide"></div>
-        <div class="bg-slide"></div>
-        <div class="bg-slide"></div>
-        <div class="bg-slide"></div>
+<ul class="bg-slideshow">
+    <li></li>
+    <li></li>
+    <li></li>
+    <li></li>
+</ul>
+
+<div class="wrapper">
+    <header>
+        <div class="logo-container">
+            <span id="logo-text"></span><span class="cursor"></span>
+        </div>
+        <div class="burger-menu" onclick="toggleMenu()">
+            <div class="line1"></div>
+            <div class="line2"></div>
+            <div class="line3"></div>
+        </div>
+    </header>
+
+    <div class="fullscreen-menu" id="fs-menu">
+        <div class="menu-title" data-i18n="select-lang">Select Language</div>
+        <ul class="lang-list">
+            <li><button id="btn-en" onclick="changeLang('en')">English</button></li>
+            <li><button id="btn-ru" onclick="changeLang('ru')">Русский</button></li>
+            <li><button id="btn-ua" onclick="changeLang('ua')">Українська</button></li>
+            <li><button id="btn-by" onclick="changeLang('by')">Беларуская</button></li>
+            <li><button id="btn-kz" onclick="changeLang('kz')">Қазақша</button></li>
+        </ul>
     </div>
 
-    <!-- Полноэкранное меню выбора языков -->
-    <div class="lang-overlay" id="langOverlay">
-        <h2>Select Language</h2>
-        <button class="lang-link active" onclick="switchLang('ru')">Русский</button>
-        <button class="lang-link" onclick="switchLang('uk')">Українська</button>
-        <button class="lang-link" onclick="switchLang('be')">Беларуская</button>
-        <button class="lang-link" onclick="switchLang('kk')">Қазақ Тілі</button>
-        <button class="lang-link" onclick="switchLang('en')">English</button>
-    </div>
+    <main class="container">
+        <section class="hero">
+            <h1 data-i18n="hero-title">Loading...</h1>
+            <p data-i18n="hero-desc">Loading...</p>
+        </section>
 
-    <div class="container">
-        <header>
-            <h1 id="main-title">AGReborn</h1>
-            <!-- Бургер -->
-            <div class="burger-menu" id="burgerMenu" onclick="toggleLangMenu()">
-                <div class="burger-line"></div>
-                <div class="burger-line"></div>
-                <div class="burger-line"></div>
+        <a href="https://github.com/alekstwin63/AGReborn/releases" id="dl-link" target="_blank" class="download-box">
+            <div class="download-info">
+                <span class="dl-title" id="dl-main-text">FETCHING LATEST RELEASE...</span>
+                <span class="dl-sub" id="dl-sub-text">github.com/alekstwin63/AGReborn/releases</span>
             </div>
-        </header>
+            <span class="dl-icon" id="dl-icon-symbol">↘</span>
+        </a>
 
-        <main>
-            <!-- Описание проекта (теперь в едином стиле) -->
-            <section class="feature-card about-card">
-                <h2 id="about-title">О проекте AGReborn</h2>
-                <p id="about-text">Hello</p>
-            </section>
-
-            <!-- Карточка 1 -->
-            <section class="feature-card">
-                <!-- Пример добавления картинки: style="background-image: url('Images/your_img.jpg')" -->
-                <div class="card-image" style="background-image: url('images/image2.png')" onclick="openModal(this)"></div>
-                <div class="card-text" id="feat-1">
-                    Смертельный матч на максимальных скоростях. Оптимизированный движок обеспечивает стабильный FPS и мгновенный отклик мыши в любых замесах.
+        <section class="features">
+            <div class="feature-item">
+                <div class="feature-title" onclick="toggleFeature(this)">
+                    <span data-i18n="f1-title">Loading...</span>
+                    <div class="arrow-icon"></div>
                 </div>
-            </section>
-
-            <!-- Карточка 2 -->
-            <section class="feature-card">
-                <div class="card-image" style="background-image: url('images/image.png')" onclick="openModal(this)"></div>
-                <div class="card-text" id="feat-2">
-                    Полностью кастомизируемый интерфейс, продвинутый хитсаунд пак и встроенные инструменты для детальной настройки прицела и графики под киберспорт.
+                <div class="feature-desc">
+                    <p data-i18n="f1-desc">Loading...</p>
+                    <div class="screenshot-container">
+                        <img src="images/image.png" class="game-thumb" onclick="openLightbox(this.src)" alt="AGReborn Gameplay 1">
+                        <img src="images/image2.png" class="game-thumb" onclick="openLightbox(this.src)" alt="AGReborn Gameplay 2">
+                    </div>
                 </div>
-            </section>
-        </main>
+            </div>
 
-        <footer>
-            <a href="https://github.com/alekstwin63/OpenAG/releases" class="download-btn" id="btn-text" target="_blank">Get Latest Version</a>
-        </footer>
-    </div>
+            <div class="feature-item">
+                <div class="feature-title" onclick="toggleFeature(this)">
+                    <span data-i18n="f2-title">Loading...</span>
+                    <div class="arrow-icon"></div>
+                </div>
+                <div class="feature-desc">
+                    <p data-i18n="f2-desc">Loading...</p>
+                    <div class="screenshot-container">
+                        <img src="images/image2.png" class="game-thumb" onclick="openLightbox(this.src)" alt="AGReborn Config">
+                        <img src="images/image.png" class="game-thumb" onclick="openLightbox(this.src)" alt="AGReborn Match">
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 
-    <!-- Модалка просмотра -->
-    <div class="modal" id="photoModal">
-        <span class="modal-close" onclick="closeModal()">&times;</span>
-        <div class="modal-content" id="modalImg"></div>
-    </div>
+    <footer>
+        made by <a href="https://nlpacollab.neocities.org/" target="_blank" class="collab-link">nlpa collab</a> for half-life players
+    </footer>
+</div>
 
-    <script>
-        const translations = {
-            ru: {
-                aboutTitle: "О проекте OpenAG",
-                aboutText: "Hello",
-                feat1: "Смертельный матч на максимальных скоростях. Оптимизированный движок обеспечивает стабильный FPS и мгновенный отклик мыши в любых замесах.",
-                feat2: "Полностью кастомизируемый интерфейс, продвинутый хитсаунд пак и встроенные инструменты для детальной настройки прицела и графики под киберспорт.",
-                feat3: "Улучшенный сетевой код с компенсацией задержек (lag compensation), устраняющий старые баги с регистрацией попаданий на серверах.",
-                btn: "Скачать последнюю версию"
-            },
-            uk: {
-                aboutTitle: "Про проєкт OpenAG",
-                aboutText: "Hello",
-                feat1: "Смертельний матч на максимальних швидкостях. Оптимізований двигун забезпечує стабільний FPS та миттєвий відгук миші у будь-яких замісах.",
-                feat2: "Повністю кастомізований інтерфейс, просунутий хітсаунд пак та вбудовані інструменти для детального налаштування прицілу.",
-                feat3: "Покращений мережевий код з компенсацією затримок, що усуває старі баги з реєстрацією влучань на серверах.",
-                btn: "Завантажити останню версію"
-            },
-            be: {
-                aboutTitle: "Пра праект OpenAG",
-                aboutText: "Hello",
-                feat1: "Смяротны матч на максімальных хуткасцях. Аптымізаваны рухавік забяспечвае стабільны FPS і імгненны водгук мышы.",
-                feat2: "Цалкам кастамізуемы інтэрфейс, прасунуты хітсаўнд пак і ўбудаваныя інструменты для дэталёвай налады прыцэла.",
-                feat3: "Палепшаны сеткавы код з кампенсацыяй затрымак, які ліквідуе старыя багі з рэгістрацыяй трапленняў.",
-                btn: "Спампаваць апошнюю версію"
-            },
-            kk: {
-                aboutTitle: "OpenAG жобасы туралы",
-                aboutText: "Hello",
-                feat1: "Максималды жылдамдықтағы өлім матчы. Оңтайландырылған қозғалтқыш кез келген шайқаста тұрақты FPS пен тінтуірдің лезде жауап беруін қамтамасыз етеді.",
-                feat2: "Толық теңшелетін интерфейс, жетілдірілген хитсаунд пак және киберспортқа арналған көздеуіш пен графиканы егжей-тегжейлі баптау құралдары.",
-                feat3: "Серверлердегі хиттарды тіркеудегі ескі қателерді жоятын кідіріс өтемақысы бар жақсартылған желілік код.",
-                btn: "Соңғы нұсқасын жүктеу"
-            },
-            en: {
-                aboutTitle: "About OpenAG Project",
-                aboutText: "Hello",
-                feat1: "Deathmatch at maximum speeds. The optimized engine provides stable FPS and instant mouse response in any battles.",
-                feat2: "Fully customizable UI, advanced hitsound pack, and built-in tools for detailed crosshair and graphics tuning for esports.",
-                feat3: "Improved network code with lag compensation, eliminating old hit registration bugs on servers.",
-                btn: "Get Latest Version"
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Enlarged screenshot">
+</div>
+
+<script>
+    const i18n = {
+        en: {
+            "select-lang": "Select Language",
+            "dl-loading": "FETCHING LATEST RELEASE...",
+            "dl-success": "DOWNLOAD LATEST CLIENT",
+            "hero-title": "AGReborn // Adrenaline Gamer Client",
+            "hero-desc": "AGReborn is an advanced open-source client implementation of the legendary Half-Life promod Adrenaline Gamer. Completely rewritten from scratch on the latest Half-Life SDK, it delivers modern structural refinement, crucial stability updates, and full backwards compatibility with existing servers.",
+            "f1-title": "What is AGReborn & Main Features",
+            "f1-desc": "AGReborn serves as a definitive upgrade over the vanilla client package, strictly engineered for the competitive multi-player scene. It brings robust native Linux support, completely fixed mouse engine behavior to guarantee unadulterated raw input execution, a highly custom console-driven crosshair generator, and built-in optimized autojump logic. Furthermore, it incorporates advanced client-side features such as custom playermodels enforcement per team, integrated speedometer modules, rainbow HUD elements, and an in-game asset update checker while remaining fully secure.",
+            "f2-title": "Deployment, Customization & CVARs",
+            "f2-desc": "To initialize the client environment, you must own a licensed copy of Half-Life on Steam. Simply drop the modified client binaries directly into your local Half-Life/ag system directory and perform a hard reset on your Steam client instance. Once deployed, the client grants access to deep structural adjustments via local CVAR blocks, including weapon auto-switch toggles (cl_autowepswitch), customized match timers (hud_timer), phase-controlled interface styling, and advanced network-synchronized killfeeds designed specifically for capturing fluid gameplay fragments and competitive demo recordings.",
+        },
+        ru: {
+            "select-lang": "Выберите язык",
+            "dl-loading": "ПОЛУЧЕНИЕ СВЕЖЕГО РЕЛИЗА...",
+            "dl-success": "СКАЧАТЬ АКТУАЛЬНЫЙ КЛИЕНТ",
+            "hero-title": "AGReborn // Клиент Adrenaline Gamer",
+            "hero-desc": "AGReborn — это продвинутый открытый клиент легендарного Half-Life про-мода Adrenaline Gamer. Переписанный с нуля на базе актуального Half-Life SDK, он предоставляет современные архитектурные улучшения, исправления критических багов и полную обратную совместимость с текущими серверами.",
+            "f1-title": "Что такое AGReborn и Ключевые Фичи",
+            "f1-desc": "AGReborn представляет собой бескомпромиссный апгрейд стандартного игрового клиента, разработанный специально для соревновательной сцены. Проект обеспечивает нативную поддержку Linux, полностью исправленный движок обработки мыши для идеального Raw Input ввода, гибкий генератор прицелов через консоль и встроенную оптимизированную логику автопрыжка (autojump). Дополнительно реализованы принудительные скины игроков для команд, настраиваемые модули спидометра, радужный интерфейс (Rainbow HUD) и автоматическая проверка обновлений игровых ресурсов.",
+            "f2-title": "Установка, Конфигурация и Переменные",
+            "f2-desc": "Для развертывания модификации необходимо наличие лицензионной версии Half-Life в Steam. Перенесите скомпилированные бинарники клиента прямо в локальную директорию Half-Life/ag и перезапустите Steam. После установки клиент открывает доступ к глубоким структурным настройкам через систему CVAR-команд: быстрое переключение оружия (cl_autowepswitch), кастомные таймеры матчей (hud_timer), управление фазовым сдвигом интерфейса и продвинутые логи киллфида для комфортной записи фрагмуви и анализа турнирных демок.",
+        },
+        ua: {
+            "select-lang": "Оберіть мову",
+            "dl-loading": "ОТРИМАННЯ СВІЖОГО РЕЛІЗУ...",
+            "dl-success": "ЗАВАНТАЖИТИ АКТУАЛЬНИЙ КЛІЄНТ",
+            "hero-title": "AGReborn // Клієнт Adrenaline Gamer",
+            "hero-desc": "AGReborn — це сучасний відкритий клієнт легендарного Half-Life про-моду Adrenaline Gamer. Переписаний з нуля на базі актуального Half-Life SDK, він забезпечує архітектурні покращення, виправлення критичних багів та стовідсонтову зворотну сумісність із поточними серверами.",
+            "f1-title": "Що таке AGReborn та Ключові Фічі",
+            "f1-desc": "AGReborn є безкомпромісним апгрейдом стандартного ігрового клієнта, розробленим для змагальної дисципліни. Проєкт надає нативну підтримку Linux, повністю виправлений движок обробки мыші для ідеального Raw Input введення, гнучкий генератор прицілів через консоль та вбудовану логіку автострибка (autojump). Додатково реалізовано примусові скіни гравців для команд, настроювані спідометри, райдужний інтерфейс (Rainbow HUD) та автоматичну перевірку оновлень ресурсів.",
+            "f2-title": "Встановлення, Конфигурація та Змінні",
+            "f2-desc": "Для розгортання модифікації необхідна наявність ліцензійної версії Half-Life у Steam. Перенесіть файли клієнта до директорії Half-Life/ag та перезапустіть Steam. Клієнт розширює можливості кастомізації через систему CVAR-команд: швидке перемикання зброї (cl_autowepswitch), кастомні таймеры матчів (hud_timer) та просунуті deathnotices-логи.",
+        },
+        by: {
+            "select-lang": "Выберыце мову",
+            "dl-loading": "АТРЫМАННЕ СВЕЖАГА РЭЛІЗУ...",
+            "dl-success": "СПАМПАВАЦЬ АКТУАЛЬНЫ КЛІЕНТ",
+            "hero-title": "AGReborn // Кліент Adrenaline Gamer",
+            "hero-desc": "AGReborn — гэта прасунуты адкрыты кліент легендарнага Half-Life про-мода Adrenaline Gamer. Перапісаны з нуля на базе актуальнага Half-Life SDK, ён забяспечвае сучасныя архітэктурныя паляпшэнні, выпраўленні крытычных багаў і поўную сумяшчальнасць з бягучымі серверамі.",
+            "f1-title": "Што такое AGReborn і Ключавыя Фічы",
+            "f1-desc": "AGReborn уяўляе сабой бескампрамісны апгрэйд стандартнага кліента, заменчаны пад спартыўную дысцыпліну. Праект гарантуе натыўную падтрымку Linux, цалкам выпраўлены рухавік апрацоўкі мышы для ідэальнага Raw Input уводу, гнуткі генератар прыцэлаў праз кансоль і аптымізаваную логіку аўtaskкоку (autojump). Дадаткова рэалізаваны прымусовыя скіны гульцоў для каманд, наладжвальныя спідометры, вясёлкавы інтэрфейс (Rainbow HUD) і праверка абнаўленняў.",
+            "f2-title": "Усталёўка, Канфігурацыя і Зменныя",
+            "f2-desc": "Для разгортвання мадыфікацыі неабходна наяўнасць ліцэнзійнай версіі Half-Life у Steam. Перенясіце файлы пакета ў дырэкторыю Half-Life/ag і перазапусціце Steam. Кліент пашырае магчымасці кастамізацыі праз сістэму CVAR-каманд: хуткае пераключэнне зброі (cl_autowepswitch), кастомныя таймеры матчаў (hud_timer) і прасунутыя deathnotices-логі.",
+        },
+        kz: {
+            "select-lang": "Тілді таңдаңыз",
+            "dl-loading": "ЖАҢА РЕЛИЗДІ ИГЕРУ...",
+            "dl-success": "АКТУАЛДЫ КЛИЕНТТІ ЖҮКТЕУ",
+            "hero-title": "AGReborn // Adrenaline Gamer Клиенті",
+            "hero-desc": "AGReborn — бұл аңызға айналған Half-Life про-моды Adrenaline Gamer клиентінің кеңейтілген ашық нұсқасы. Ең соңғы Half-Life SDK негізінде нөлден қайта жазылған бұл жоба заманауи архитектуралық жақсартуларды, маңызды қателерді түзетуді және жұмыс істеп тұрған серверлермен толық үйлесімділікті қамтаспользуется.",
+            "f1-title": "AGReborn дегеніміз не және Негізгі Мүмкіндіктері",
+            "f1-desc": "AGReborn бәсекелестік көпшілік ойын ортасына арнайы жасалған стандартты клиенттің түпкілікті жаңартуы болып табылады. Ол Linux жүйесін нативті қолдауды, таза Raw Input қамтамасыз ету үшін түзетілген тінтуір қозғалтқышын, консоль арқылы реттелетін нысана генераторын және кірістірілген авто-секіру (autojump) логикасын ұсынады. Сонымен қатар, командаларға арналған арнайы модельдерді мәжбүрлеу, жылдамдық өлшегіштер, кемпірқосақ HUD элементтері бар.",
+            "f2-title": "Орнату, Реттеу және CVAR Командалары",
+            "f2-desc": "Модификацияны іскеқосу үшін Steam платформасында Half-Life лицензиялық нұсқасы болуы қажет. Файлдарды Half-Life/ag директориясына орналастырып, Steam жүйесін қайта іске қосыңыз. Клиент локальді CVAR командалары арқылы терең баптауларға мүмкіндік береді: қаруды автоматты түрде ауыстыру (cl_autowepswitch), реттелетін матч таймерлері (hud_timer) және фрагмуви жазуға арналған кеңейтілген deathnotices жүйесі.",
+        }
+    };
+
+    let currentLang = localStorage.getItem('ag_lang') || 'en';
+    let latestVersionTag = ""; 
+
+    function updateDOM() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (i18n[currentLang][key]) {
+                el.innerText = i18n[currentLang][key];
             }
-        };
-
-        // Логика бургер-меню
-        const burgerMenu = document.getElementById('burgerMenu');
-        const langOverlay = document.getElementById('langOverlay');
-
-        function toggleLangMenu() {
-            burgerMenu.classList.toggle('open');
-            langOverlay.classList.toggle('open');
-        }
-
-        function switchLang(lang) {
-            document.querySelectorAll('.lang-link').forEach(btn => btn.classList.remove('active'));
-            // Находим кнопку через перебор, так как событие event может потеряться
-            Array.from(document.querySelectorAll('.lang-link')).find(el => el.getAttribute('onclick').includes(lang)).classList.add('active');
-
-            document.getElementById('about-title').innerText = translations[lang].aboutTitle;
-            document.getElementById('about-text').innerText = translations[lang].aboutText;
-            document.getElementById('feat-1').innerText = translations[lang].feat1;
-            document.getElementById('feat-2').innerText = translations[lang].feat2;
-            document.getElementById('feat-3').innerText = translations[lang].feat3;
-            document.getElementById('btn-text').innerText = translations[lang].btn;
-
-            // Закрываем меню после выбора
-            toggleLangMenu();
-        }
-
-        // Логика модалки
-        const modal = document.getElementById('photoModal');
-        const modalImg = document.getElementById('modalImg');
-
-        function openModal(element) {
-            modal.classList.add('active');
-            const bg = window.getComputedStyle(element).backgroundImage;
-            if(bg && bg !== 'none') {
-                modalImg.style.backgroundImage = bg;
-                modalImg.style.backgroundColor = 'transparent'; 
-            } else {
-                modalImg.style.backgroundImage = 'none';
-                modalImg.style.backgroundColor = '#ff0000'; // Если пустая — горит красным
-            }
-        }
-
-        function closeModal() {
-            modal.classList.remove('active');
-        }
-
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) closeModal();
         });
-    </script>
+
+        // Умное обновление текста на кнопке скачивания
+        const mainDlText = document.getElementById('dl-main-text');
+        if (latestVersionTag) {
+            mainDlText.innerText = `${i18n[currentLang]['dl-success']} (${latestVersionTag})`;
+        } else {
+            mainDlText.innerText = i18n[currentLang]['dl-loading'];
+        }
+
+        ['en', 'ru', 'ua', 'by', 'kz'].forEach(l => {
+            document.getElementById(`btn-${l}`).classList.toggle('active', currentLang === l);
+        });
+    }
+
+    function changeLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('ag_lang', lang);
+        updateDOM();
+        toggleMenu();
+    }
+
+    function toggleMenu() {
+        document.querySelector('.burger-menu').classList.toggle('toggle');
+        document.getElementById('fs-menu').classList.toggle('open');
+    }
+
+    function toggleFeature(element) {
+        const item = element.parentElement;
+        item.classList.toggle('open');
+    }
+
+    function openLightbox(src) {
+        const lb = document.getElementById('lightbox');
+        document.getElementById('lightbox-img').src = src;
+        lb.classList.add('open');
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('open');
+    }
+
+    function runTypewriter() {
+        const text = "AGReborn_";
+        const speed = 60; 
+        let i = 0;
+        const target = document.getElementById('logo-text');
+        target.innerText = "";
+        
+        function type() {
+            if (i < text.length) {
+                target.innerText += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            }
+        }
+        type();
+    }
+
+    // Динамический перехват последнего релиза через GitHub API
+    async function initLatestReleaseLink() {
+        const repo = "alekstwin63/AGReborn";
+        const url = `https://api.github.com/repos/${repo}/releases/latest`;
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('API limit or repo not found');
+            const data = await response.json();
+            
+            if (data.assets && data.assets.length > 0) {
+                // Извлекаем прямую ссылку на первый скомпилированный ассет (.zip, .rar или .exe)
+                const downloadUrl = data.assets[0].browser_download_url;
+                latestVersionTag = data.tag_name; // Например "v1.2.4"
+                
+                const linkElement = document.getElementById('dl-link');
+                linkElement.href = downloadUrl;
+                
+                // Меняем иконку на классический символ загрузки
+                document.getElementById('dl-icon-symbol').innerText = "↓";
+                document.getElementById('dl-sub-text').innerText = data.assets[0].name;
+            } else {
+                // Если ассетов нет, кидаем на исходный код релиза
+                latestVersionTag = data.tag_name;
+                document.getElementById('dl-link').href = data.zipball_url;
+            }
+        } catch (error) {
+            console.warn("GitHub API fetch failed. Using fallback link to releases tab.", error);
+            // Фолбэк: если гитхаб лежит, оставляем стандартный текст и ссылку на вкладку релизов
+            latestVersionTag = "REL";
+        }
+        
+        updateDOM();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateDOM();
+        runTypewriter();
+        initLatestReleaseLink();
+    });
+</script>
+
 </body>
 </html>
